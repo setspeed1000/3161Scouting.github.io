@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tronic Titans 3161 — Scouting Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* Hemi Head — 3161's official logo font (self-hosted fallback via base64 would go here,
+   but since we can't host fonts on GitHub Pages easily, we approximate with
+   Rajdhani Bold Italic for the logo text and load actual logo as image) */
+@font-face {
+  font-family: 'HemiHead';
+  src: url('HemiHead.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+/* ══════════════════════════════════════════════════
+   3161 TRONIC TITANS — OFFICIAL BRAND COLOURS
+   Primary: Gold #B3861B · Grey #333333
+   Secondary: Blue #63B0FF · Platinum #8598B1
+   Headings: Rajdhani · Body: Roboto
+   ══════════════════════════════════════════════════ */
+:root{
+  --gold:#B3861B;--gold-h1:#CC991F;--gold-h2:#E6AC22;
+  --grey:#333333;--grey-h1:#CCCCCC;--grey-h2:#B3B3B3;--grey-h3:#595959;--grey-shadow:#0D0D0D;
+  --blue:#63B0FF;--purple:#B063FF;--plat:#8598B1;--orange:#CD7F2F;--red:#D5573B;
+  --bg:#1a1a1a;--card:#242424;--card-h:#2e2e2e;--border:#3a3a3a;
+  --t1:#f0f0f0;--t2:#B3B3B3;--t3:#777;
+  --head:'Rajdhani',sans-serif;--body:'Roboto',sans-serif;--mono:'Fira Code',monospace;--logo:'HemiHead','Rajdhani',sans-serif;
+  --r:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--body);background:var(--bg);color:var(--t1);line-height:1.5;min-height:100vh;font-weight:300}
+.wrap{max-width:1440px;margin:0 auto;padding:0 28px;position:relative}
+
+/* Logo text style — mimics Hemi Head bold italic condensed */
+.logo-text{font-family:var(--logo);font-weight:700;font-style:italic;text-transform:uppercase;letter-spacing:.02em}
+
+/* ═══ HEADER ═══ */
+header{padding:28px 0 18px;border-bottom:2px solid var(--gold);margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px}
+.brand{display:flex;align-items:center;gap:14px}
+.logo-mark{width:52px;height:52px;background:var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-weight:700;font-size:1.5rem;color:var(--grey);letter-spacing:-1px}
+.brand h1{font-family:var(--head);font-size:1.8rem;font-weight:700;color:var(--t1);letter-spacing:.01em}
+.brand h1 em{font-style:normal;color:var(--gold)}
+.brand p{font-size:.8rem;color:var(--t2);font-weight:300}
+
+.status{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.srow{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:.7rem;color:var(--t2)}
+.dot{width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981;animation:bk 2s infinite}
+.dot.err{background:var(--red);box-shadow:0 0 6px var(--red);animation:none}
+.dot.ld{background:var(--gold-h2);box-shadow:0 0 6px var(--gold-h2)}
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.3}}
+.ts{font-family:var(--mono);font-size:.62rem;color:var(--t3)}
+.ref{display:flex;align-items:center;gap:6px}
+.ref select{background:var(--bg);border:1px solid var(--border);color:var(--t2);font-family:var(--mono);font-size:.65rem;padding:2px 5px;border-radius:4px;min-width:auto}
+.rbtn{background:0 0;border:1px solid var(--border);color:var(--t2);padding:2px 8px;border-radius:4px;font-size:.7rem;cursor:pointer;transition:.2s}
+.rbtn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ═══ TABS ═══ */
+.tabs{display:flex;gap:2px;margin-bottom:22px;background:var(--card);padding:3px;border-radius:6px;border:1px solid var(--border);width:fit-content}
+.tb{padding:8px 18px;border:none;background:0 0;color:var(--t2);font-family:var(--head);font-size:.9rem;font-weight:600;border-radius:4px;cursor:pointer;transition:.2s;letter-spacing:.02em}
+.tb:hover{color:var(--t1);background:var(--card-h)}
+.tb.active{background:var(--gold);color:var(--grey);box-shadow:0 2px 10px rgba(179,134,27,.3)}
+.tp{display:none;animation:fi .25s ease}.tp.active{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* ═══ SHARED ═══ */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.card:hover{border-color:rgba(179,134,27,.25)}
+.ct{font-family:var(--head);font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--gold);margin-bottom:12px}
+select,input[type="text"]{background:var(--bg);border:1px solid var(--border);color:var(--t1);padding:8px 12px;border-radius:6px;font-family:var(--body);font-size:.84rem;min-width:190px;transition:.2s;font-weight:300}
+select:focus,input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 12px rgba(179,134,27,.2)}
+.ctrls{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:18px}
+.fld{display:flex;flex-direction:column;gap:3px}
+.fld label{font-family:var(--head);font-size:.7rem;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.08em}
+.btn{padding:8px 18px;border:none;border-radius:6px;font-family:var(--head);font-weight:600;font-size:.84rem;cursor:pointer;transition:.2s}
+.btn-g{background:var(--gold);color:var(--grey)}.btn-g:hover{background:var(--gold-h1);box-shadow:0 4px 14px rgba(179,134,27,.3)}
+
+/* ═══ TABLE ═══ */
+.tw{overflow-x:auto;border-radius:var(--r)}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+thead th{background:var(--bg);color:var(--gold);font-family:var(--head);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;padding:10px 11px;text-align:left;border-bottom:2px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;position:sticky;top:0;z-index:2;transition:.15s}
+thead th:hover{color:var(--gold-h2)}
+thead th .sa{margin-left:3px;font-size:.58rem;opacity:.4}
+thead th.sorted .sa{opacity:1;color:var(--gold-h2)}
+tbody tr{border-bottom:1px solid var(--border);transition:.12s}
+tbody tr:hover{background:var(--card-h)}
+tbody tr.highlight-3161{background:rgba(179,134,27,.08)}
+tbody tr.highlight-3161:hover{background:rgba(179,134,27,.15)}
+tbody td{padding:8px 11px;font-family:var(--mono);font-size:.76rem;white-space:nowrap}
+.pos{color:#10b981}.neg{color:var(--red)}
+.rk{color:var(--t3)!important;font-size:.7rem!important}
+
+/* ═══ CHARTS ═══ */
+.cb{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.cb canvas{max-height:380px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.g2{grid-template-columns:1fr}}
+
+/* ═══ STATS ═══ */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:22px}
+.st{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;text-align:center;border-top:3px solid var(--gold)}
+.st .v{font-size:1.7rem;font-weight:700;font-family:var(--head);color:var(--gold-h2)}
+.st .l{font-size:.68rem;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;font-weight:400}
+
+/* ═══ TILES ═══ */
+.tg{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:9px;margin-bottom:18px}
+.tile{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px 13px;border-left:3px solid var(--gold)}
+.tile .tv{font-family:var(--mono);font-size:1.1rem;font-weight:500}
+.tile .tl{font-family:var(--head);font-size:.66rem;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-top:1px}
+.tile .tr{font-family:var(--mono);font-size:.62rem;color:var(--t3);margin-top:2px}
+
+.search{margin-bottom:12px;position:relative}
+.search input{width:100%;max-width:320px;padding-left:34px}
+.search::before{content:'⌕';position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:.95rem}
+
+/* ═══ LOADING ═══ */
+.lov{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .4s}
+.lov.h{opacity:0;pointer-events:none}
+.sp{width:42px;height:42px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lov p{margin-top:14px;color:var(--t2);font-family:var(--head);font-size:.85rem}
+footer{text-align:center;padding:32px 0;color:var(--t3);font-size:.7rem;border-top:1px solid var(--border);margin-top:32px;font-family:var(--head);letter-spacing:.05em}
+footer span{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="lov" id="lov">
+  <img src="https://wiki.team3161.ca/uploads/images/gallery/2023-11/scaled-1680-/logo-hero.png" alt="3161" style="height:80px;margin-bottom:12px;filter:brightness(1.1)" onerror="this.style.display='none'">
+  <div class="sp"></div>
+  <p class="logo-text" style="font-size:1rem;color:var(--gold)">TRONIC TITANS — Loading scouting data…</p>
+</div>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <img src="https://wiki.team3161.ca/uploads/images/gallery/2023-11/scaled-1680-/logo-hero.png" alt="3161 Logo" style="height:56px;width:auto;object-fit:contain;filter:brightness(1.1)" onerror="this.style.display='none'">
+      <div>
+        <h1 class="logo-text" style="font-size:1.7rem;color:var(--t1);margin:0;line-height:1.1">
+          <span style="color:var(--gold)">TEAM 3161</span>
+        </h1>
+        <h2 class="logo-text" style="font-size:1.15rem;color:var(--gold-h2);margin:0;line-height:1.1;font-weight:600">TRONIC TITANS</h2>
+        <p style="font-family:var(--body);font-size:.75rem;color:var(--t2);font-weight:300;font-style:normal;margin-top:3px">Scouting Dashboard — 2026 Season</p>
+      </div>
+    </div>
+    <div class="status">
+      <div class="srow"><div class="dot" id="dot"></div><span id="stxt">Connecting…</span></div>
+      <div class="ts" id="ts">Last updated: —</div>
+      <div class="ref">
+        <select id="iv"><option value="10">10s</option><option value="30" selected>30s</option><option value="60">60s</option><option value="0">Manual</option></select>
+        <button class="rbtn" id="rbtn">↻</button>
+      </div>
+    </div>
+  </header>
+  <div class="tabs">
+    <button class="tb active" data-tab="overview">Overview</button>
+    <button class="tb" data-tab="rankings">Rankings</button>
+    <button class="tb" data-tab="leaderboard">Leaderboard</button>
+    <button class="tb" data-tab="compare">Compare</button>
+    <button class="tb" data-tab="profile">Team Profile</button>
+  </div>
+
+  <div class="tp active" id="tab-overview">
+    <div class="stats" id="kpi"></div>
+    <div class="g2">
+      <div class="cb"><div class="ct">Total — All Teams</div><canvas id="c-ob"></canvas></div>
+      <div class="cb"><div class="ct">Breakdown</div><canvas id="c-os"></canvas></div>
+    </div>
+  </div>
+
+  <div class="tp" id="tab-rankings">
+    <div class="search"><input type="text" id="search" placeholder="Search teams..."></div>
+    <div class="card"><div class="tw" style="max-height:70vh;overflow-y:auto"><table><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div></div>
+  </div>
+
+  <div class="tp" id="tab-leaderboard">
+    <div class="ctrls"><div class="fld"><label>Category</label><select id="lb-cat"></select></div></div>
+    <div class="g2">
+      <div class="card"><div class="ct">Rankings</div><div class="tw" style="max-height:60vh;overflow-y:auto"><table><thead><tr><th>#</th><th>Team</th><th>Value</th></tr></thead><tbody id="lb-body"></tbody></table></div></div>
+      <div class="cb"><div class="ct">Chart</div><canvas id="c-lb"></canvas></div>
+    </div>
+  </div>
+
+  <div class="tp" id="tab-compare">
+    <div class="ctrls">
+      <div class="fld"><label>Team A</label><select id="selA"></select></div>
+      <div class="fld"><label>Team B</label><select id="selB"></select></div>
+      <button class="btn btn-g" id="cmp-btn">Compare</button>
+    </div>
+    <div class="g2">
+      <div class="cb"><div class="ct">Radar</div><canvas id="c-rd"></canvas></div>
+      <div class="cb"><div class="ct">Side-by-Side</div><canvas id="c-cb"></canvas></div>
+    </div>
+    <div class="card" id="cmp-card" style="display:none"><div class="ct">Full Comparison</div>
+      <div class="tw"><table><thead><tr><th>Metric</th><th id="ha">A</th><th id="hb">B</th><th>Δ</th></tr></thead><tbody id="cmp-body"></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="tp" id="tab-profile">
+    <div class="ctrls"><div class="fld"><label>Select Team</label><select id="p-sel"></select></div></div>
+    <div id="p-c"></div>
+  </div>
+
+  <footer><span class="logo-text" style="font-size:.85rem;color:var(--gold)">3161</span> TRONIC TITANS — Live Scouting Data</footer>
+</div>
+<script>
+/* ══════════════════════════════════════════════════
+   CONFIG
+   ══════════════════════════════════════════════════ */
+const CSV_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQgpcGo2xyNu06Cr6-lFYpVrWlTAMDFX1vSMuUdbQbx4uFwdNmrmDZul0XsAxQYR4Q04jevahVhfmqH/pub?gid=0&single=true&output=csv";
+const REFRESH_SEC=30;
+const OUR_TEAM='3161'; // highlight this team in charts/tables
+
+/* ══ 3161 BRAND COLOURS ══ */
+const GOLD='#B3861B',GOLD_H1='#CC991F',GOLD_H2='#E6AC22';
+const GREY='#333333',GREY_H1='#CCCCCC',GREY_H2='#B3B3B3';
+const BLUE='#63B0FF',PLAT='#8598B1',RED_3161='#D5573B';
+
+/* ══ STATE ══ */
+let data=[],hdrs=[],tCol='',nCols=[],ranks={},sortK='',sortD=-1,lastH='',timer=null,CH={};
+
+Chart.defaults.color='#B3B3B3';Chart.defaults.borderColor='#3a3a3a';Chart.defaults.font.family="'Roboto',sans-serif";
+function dc(id){if(CH[id]){CH[id].destroy();delete CH[id]}}
+
+/* ══ HELPERS ══ */
+function $(id){return document.getElementById(id)}
+function tid(r){return String(r[tCol])}
+function is3161(t){return String(t).replace(/\s/g,'')==='3161'}
+function hash(s){let h=0;for(let i=0;i<s.length;i++)h=((h<<5)-h+s.charCodeAt(i))|0;return h}
+function setSt(s,t){$('dot').className='dot'+(s==='err'?' err':s==='ld'?' ld':'');$('stxt').textContent=t}
+function ts(){$('ts').textContent='Updated '+new Date().toLocaleTimeString()}
+function fmt(v){return v==null?'#N/A':typeof v==='number'?v.toFixed(2):v}
+function vc(v){return typeof v==='number'?(v>0?'pos':v<0?'neg':''):''}
+
+/* bar color: gold for 3161, grey for others */
+function barColor(teamId){return is3161(teamId)?GOLD:'rgba(179,134,27,0.3)'}
+function barColors(sorted){return sorted.map(t=>barColor(tid(t)))}
+
+/* ══ FETCH + CORS PROXY ══ */
+async function fetchCSV(url){
+  try{const r=await fetch(url);if(r.ok)return await r.text()}catch(e){}
+  for(const p of['https://api.allorigins.win/raw?url=','https://corsproxy.io/?']){
+    try{const r=await fetch(p+encodeURIComponent(url));if(r.ok)return await r.text()}catch(e){}
+  }
+  throw new Error('Could not reach Google Sheets — is it published to the web?');
+}
+
+/* ══ LOAD ══ */
+async function load(){
+  setSt('ld','Fetching…');
+  try{
+    const raw=await fetchCSV(CSV_URL+'&_t='+Date.now());
+    const h=hash(raw);if(h===lastH){setSt('ok','No changes');ts();return}lastH=h;
+    let lines=raw.trim().split('\n');
+    while(lines.length>1){if(lines[0].split(',').map(c=>c.replace(/"/g,'').trim()).filter(c=>c).length>=2)break;lines.shift()}
+    const p=Papa.parse(lines.join('\n'),{header:true,dynamicTyping:true,skipEmptyLines:true});
+    hdrs=p.meta.fields||[];tCol=hdrs[0];
+    data=p.data.filter(r=>r[tCol]!=null&&r[tCol]!=='');
+    nCols=hdrs.filter(h=>h!==tCol&&data.some(r=>typeof r[h]==='number'));
+    if(!sortK)sortK=nCols[0]||hdrs[1]||'';
+    ranks={};nCols.forEach(k=>{const s=[...data].filter(r=>typeof r[k]==='number').sort((a,b)=>b[k]-a[k]);ranks[k]={};s.forEach((t,i)=>ranks[k][tid(t)]=i+1)});
+    const sv={};['selA','selB','p-sel','lb-cat'].forEach(id=>{const e=$(id);if(e)sv[id]=e.value});
+    popDD();for(const id in sv){const e=$(id);if(e&&sv[id])e.value=sv[id]}
+    renderOV();renderTbl($('search').value);renderLB();renderProf();
+    if($('cmp-card').style.display!=='none')runCmp();
+    setSt('ok','Connected');ts();$('lov').classList.add('h');
+  }catch(e){console.error(e);setSt('err','Failed');if(!data.length){$('lov').querySelector('p').textContent='⚠ '+e.message;$('lov').querySelector('.sp').style.borderTopColor=RED_3161}}
+}
+
+/* ══ REFRESH ══ */
+function startR(){clearInterval(timer);const s=parseInt($('iv').value);if(s>0)timer=setInterval(load,s*1000)}
+$('iv').addEventListener('change',startR);$('rbtn').addEventListener('click',load);
+
+/* ══ TABS ══ */
+document.querySelectorAll('.tb').forEach(b=>{b.addEventListener('click',()=>{
+  document.querySelectorAll('.tb').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tp').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');$('tab-'+b.dataset.tab)?.classList.add('active');
+})});
+
+/* ══ DROPDOWNS ══ */
+function popDD(){
+  const s=[...data].sort((a,b)=>String(a[tCol]).localeCompare(String(b[tCol]),undefined,{numeric:true}));
+  const o=s.map(t=>`<option value="${tid(t)}">${tid(t)}</option>`).join('');
+  ['selA','selB','p-sel'].forEach(id=>$(id).innerHTML=o);
+  if(s.length>1)$('selB').selectedIndex=1;
+  $('lb-cat').innerHTML=nCols.map(k=>`<option value="${k}">${k}</option>`).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   1. OVERVIEW
+   ══════════════════════════════════════════════════ */
+function renderOV(){
+  if(!data.length||!nCols.length)return;
+  const mk=nCols[0],sorted=[...data].sort((a,b)=>(b[mk]||0)-(a[mk]||0));
+  const avg=k=>(data.reduce((s,t)=>s+(t[k]||0),0)/data.length).toFixed(1);
+  let kpi=`<div class="st"><div class="v">${data.length}</div><div class="l">Teams Scouted</div></div>`;
+  kpi+=`<div class="st"><div class="v">${tid(sorted[0])}</div><div class="l">Top ${mk}</div></div>`;
+  nCols.slice(0,3).forEach(k=>kpi+=`<div class="st"><div class="v">${avg(k)}</div><div class="l">Avg ${k}</div></div>`);
+  $('kpi').innerHTML=kpi;
+
+  dc('oB');CH['oB']=new Chart($('c-ob'),{type:'bar',data:{labels:sorted.map(t=>tid(t)),datasets:[{label:mk,data:sorted.map(t=>t[mk]||0),backgroundColor:barColors(sorted),borderRadius:4,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#3a3a3a55'}},y:{ticks:{font:{family:"'Fira Code'",size:11}}}}}});
+  $('c-ob').parentElement.style.height=Math.max(400,sorted.length*28)+'px';
+
+  const sk=nCols.slice(1,4),cols=[GOLD,BLUE,PLAT];
+  dc('oS');CH['oS']=new Chart($('c-os'),{type:'bar',data:{labels:sorted.map(t=>tid(t)),datasets:sk.map((k,i)=>({label:k,data:sorted.map(t=>t[k]||0),backgroundColor:cols[i%3],borderRadius:3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{x:{stacked:true,ticks:{font:{family:"'Fira Code'",size:10}}},y:{stacked:true,grid:{color:'#3a3a3a55'}}}}});
+  $('c-os').parentElement.style.height='400px';
+}
+
+/* ══════════════════════════════════════════════════
+   2. RANKINGS TABLE
+   ══════════════════════════════════════════════════ */
+function renderTbl(f){
+  if(!data.length)return;
+  const cols=[tCol,...nCols];
+  $('thead').innerHTML='<th class="rk">#</th>'+cols.map(k=>{const s=k===sortK;return`<th class="${s?'sorted':''}" data-k="${k}">${k} <span class="sa">${s?(sortD===-1?'▼':'▲'):'▽'}</span></th>`}).join('');
+  let rows=[...data];
+  if(typeof rows[0]?.[sortK]==='number')rows.sort((a,b)=>sortD*((a[sortK]||0)-(b[sortK]||0)));
+  else rows.sort((a,b)=>sortD*String(a[sortK]||'').localeCompare(String(b[sortK]||'')));
+  const q=(f||'').toLowerCase();if(q)rows=rows.filter(t=>String(t[tCol]).toLowerCase().includes(q));
+  $('tbody').innerHTML=rows.map((t,i)=>{
+    const hl=is3161(t[tCol])?' highlight-3161':'';
+    let c=`<td style="color:${is3161(t[tCol])?GOLD:BLUE};font-weight:${is3161(t[tCol])?700:500}">${t[tCol]}</td>`;
+    nCols.forEach(k=>{const v=t[k];c+=`<td class="${vc(v)}">${fmt(v)}</td>`});
+    return`<tr class="${hl}"><td class="rk">${i+1}</td>${c}</tr>`;
+  }).join('');
+  $('thead').querySelectorAll('th[data-k]').forEach(th=>{th.onclick=()=>{if(sortK===th.dataset.k)sortD*=-1;else{sortK=th.dataset.k;sortD=-1}renderTbl($('search').value)}});
+}
+$('search').addEventListener('input',e=>renderTbl(e.target.value));
+
+/* ══════════════════════════════════════════════════
+   3. LEADERBOARD
+   ══════════════════════════════════════════════════ */
+function renderLB(){
+  const cat=$('lb-cat').value;if(!cat||!data.length)return;
+  const sorted=[...data].filter(r=>typeof r[cat]==='number').sort((a,b)=>b[cat]-a[cat]);
+  $('lb-body').innerHTML=sorted.map((t,i)=>{
+    const hl=is3161(tid(t))?' highlight-3161':'';
+    return`<tr class="${hl}"><td class="rk">${i+1}</td><td style="color:${is3161(tid(t))?GOLD:BLUE};font-weight:${is3161(tid(t))?700:500}">${tid(t)}</td><td class="${vc(t[cat])}">${fmt(t[cat])}</td></tr>`;
+  }).join('');
+  dc('lb');CH['lb']=new Chart($('c-lb'),{type:'bar',data:{labels:sorted.map(t=>tid(t)),datasets:[{label:cat,data:sorted.map(t=>t[cat]||0),backgroundColor:barColors(sorted),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#3a3a3a55'}},y:{ticks:{font:{family:"'Fira Code'",size:11}}}}}});
+  $('c-lb').parentElement.style.height=Math.max(350,sorted.length*26)+'px';
+}
+$('lb-cat').addEventListener('change',renderLB);
+
+/* ══════════════════════════════════════════════════
+   4. COMPARE
+   ══════════════════════════════════════════════════ */
+function runCmp(){
+  const a=data.find(t=>tid(t)===$('selA').value),b=data.find(t=>tid(t)===$('selB').value);
+  if(!a||!b)return;const rk=nCols.slice(0,8);
+  const norm=(row,k)=>{const v=data.map(t=>t[k]||0),mn=Math.min(...v),rng=Math.max(...v)-mn||1;return((row[k]||0)-mn)/rng*100};
+  dc('rd');CH['rd']=new Chart($('c-rd'),{type:'radar',data:{labels:rk,datasets:[
+    {label:tid(a),data:rk.map(k=>norm(a,k)),borderColor:is3161(tid(a))?GOLD:BLUE,backgroundColor:(is3161(tid(a))?GOLD:BLUE)+'25',pointBackgroundColor:is3161(tid(a))?GOLD:BLUE,borderWidth:2},
+    {label:tid(b),data:rk.map(k=>norm(b,k)),borderColor:is3161(tid(b))?GOLD:PLAT,backgroundColor:(is3161(tid(b))?GOLD:PLAT)+'25',pointBackgroundColor:is3161(tid(b))?GOLD:PLAT,borderWidth:2},
+  ]},options:{responsive:true,scales:{r:{angleLines:{color:'#3a3a3a'},grid:{color:'#3a3a3a'},ticks:{display:false},suggestedMin:0,suggestedMax:100}},plugins:{legend:{position:'top'}}}});
+  dc('cb');CH['cb']=new Chart($('c-cb'),{type:'bar',data:{labels:rk,datasets:[
+    {label:tid(a),data:rk.map(k=>a[k]||0),backgroundColor:is3161(tid(a))?GOLD:BLUE,borderRadius:4},
+    {label:tid(b),data:rk.map(k=>b[k]||0),backgroundColor:is3161(tid(b))?GOLD:PLAT,borderRadius:4},
+  ]},options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{grid:{color:'#3a3a3a55'}}}}});
+  $('ha').textContent=tid(a);$('hb').textContent=tid(b);
+  $('cmp-body').innerHTML=nCols.map(k=>{const va=a[k]||0,vb=b[k]||0,d=va-vb;return`<tr><td style="font-family:var(--head);font-weight:600">${k}</td><td>${fmt(va)}</td><td>${fmt(vb)}</td><td class="${vc(d)}">${d>0?'+':''}${d.toFixed(2)}</td></tr>`}).join('');
+  $('cmp-card').style.display='block';
+}
+$('cmp-btn').addEventListener('click',runCmp);$('selA').addEventListener('change',runCmp);$('selB').addEventListener('change',runCmp);
+
+/* ══════════════════════════════════════════════════
+   5. TEAM PROFILE
+   ══════════════════════════════════════════════════ */
+function renderProf(){
+  if(!data.length)return;const id=$('p-sel').value,t=data.find(r=>tid(r)===id);if(!t)return;
+  const tiles=nCols.map(k=>{const v=t[k],rank=ranks[k]?.[tid(t)]??'-';
+    return`<div class="tile"><div class="tv ${vc(v)}">${fmt(v)}</div><div class="tl">${k}</div><div class="tr">Rank ${rank} / ${data.length}</div></div>`}).join('');
+  const color=is3161(tid(t))?GOLD:BLUE;
+  const logoHtml=is3161(tid(t))?'<img src="https://wiki.team3161.ca/uploads/images/gallery/2023-11/scaled-1680-/logo-hero.png" alt="3161" style="height:48px;margin-right:12px;vertical-align:middle;filter:brightness(1.1)" onerror="this.style.display=\'none\'">':'';
+  $('p-c').innerHTML=`
+    <div style="display:flex;align-items:center;margin-bottom:14px">${logoHtml}<span class="logo-text" style="font-size:2rem;color:${color}">#${tid(t)}${is3161(tid(t))?' TRONIC TITANS':''}</span></div>
+    <div class="tg">${tiles}</div>
+    <div class="cb" style="max-width:560px"><div class="ct">Performance Radar</div><canvas id="c-pr"></canvas></div>`;
+  const rk=nCols.slice(0,8),vals=rk.map(k=>{const all=data.map(r=>r[k]||0),mn=Math.min(...all),rng=Math.max(...all)-mn||1;return((t[k]||0)-mn)/rng*100});
+  dc('pr');CH['pr']=new Chart($('c-pr'),{type:'radar',data:{labels:rk,datasets:[
+    {label:tid(t),data:vals,borderColor:color,backgroundColor:color+'30',pointBackgroundColor:color,borderWidth:2},
+    {label:'Field Avg',data:rk.map(()=>50),borderColor:GREY_H2,backgroundColor:GREY_H2+'10',pointBackgroundColor:GREY_H2,borderWidth:1,borderDash:[4,4]},
+  ]},options:{responsive:true,scales:{r:{angleLines:{color:'#3a3a3a'},grid:{color:'#3a3a3a'},ticks:{display:false},suggestedMin:0,suggestedMax:100}},plugins:{legend:{position:'top'}}}});
+}
+$('p-sel').addEventListener('change',renderProf);
+
+/* ══ INIT ══ */
+load().then(()=>startR());
+</script>
+</body>
+</html>
