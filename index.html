@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umhd.min.js"></script>
 <style>
 /* Hemi Head — 3161's official logo font (self-hosted fallback via base64 would go here,
    but since we can't host fonts on GitHub Pages easily, we approximate with
@@ -131,14 +131,14 @@ footer span{color:var(--gold)}
 </head>
 <body>
 <div class="lov" id="lov">
-  <img src="https://wiki.team3161.ca/uploads/images/gallery/2023-11/scaled-1680-/logo-hero.png" alt="3161" style="height:80px;margin-bottom:12px;filter:brightness(1.1)" onerror="this.style.display='none'">
+  <img src="Icon_WH.png" alt="3161" style="height:80px;margin-bottom:12px;filter:brightness(1.1)" onerror="this.style.display='none'">
   <div class="sp"></div>
   <p class="logo-text" style="font-size:1rem;color:var(--gold)">TRONIC TITANS — Loading scouting data…</p>
 </div>
 <div class="wrap">
   <header>
     <div class="brand">
-      <img src="https://wiki.team3161.ca/uploads/images/gallery/2023-11/scaled-1680-/logo-hero.png" alt="3161 Logo" style="height:56px;width:auto;object-fit:contain;filter:brightness(1.1)" onerror="this.style.display='none'">
+      <img src="Icon_WH.png" alt="3161 Logo" style="height:56px;width:auto;object-fit:contain;filter:brightness(1.1)" onerror="this.style.display='none'">
       <div>
         <h1 class="logo-text" style="font-size:1.7rem;color:var(--t1);margin:0;line-height:1.1">
           <span style="color:var(--gold)">TEAM 3161</span>
@@ -376,7 +376,7 @@ function renderProf(){
   const tiles=nCols.map(k=>{const v=t[k],rank=ranks[k]?.[tid(t)]??'-';
     return`<div class="tile"><div class="tv ${vc(v)}">${fmt(v)}</div><div class="tl">${k}</div><div class="tr">Rank ${rank} / ${data.length}</div></div>`}).join('');
   const color=is3161(tid(t))?GOLD:BLUE;
-  const logoHtml=is3161(tid(t))?'<img src="https://wiki.team3161.ca/uploads/images/gallery/2023-11/scaled-1680-/logo-hero.png" alt="3161" style="height:48px;margin-right:12px;vertical-align:middle;filter:brightness(1.1)" onerror="this.style.display=\'none\'">':'';
+  const logoHtml=is3161(tid(t))?'<img src="Icon_WH.png" alt="3161" style="height:48px;margin-right:12px;vertical-align:middle;filter:brightness(1.1)" onerror="this.style.display=\'none\'">':'';
   $('p-c').innerHTML=`
     <div style="display:flex;align-items:center;margin-bottom:14px">${logoHtml}<span class="logo-text" style="font-size:2rem;color:${color}">#${tid(t)}${is3161(tid(t))?' TRONIC TITANS':''}</span></div>
     <div class="tg">${tiles}</div>
